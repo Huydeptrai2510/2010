@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>20/10 – Vũ trụ gửi lời thương</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<style>
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+html,body{margin:0;height:100%;overflow:hidden;background:#05010f;font-family:'Playfair Display',Georgia,serif;color:#fff}
+#bg{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,#2a0f4a 0,#0d0524 55%,#02010a 100%)}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+#err{display:none;position:fixed;inset:0;padding:30vh 10vw;text-align:center;font-size:20px}
+#card{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.94);width:min(88vw,470px);max-height:80vh;box-sizing:border-box;padding:22px 22px 16px;border-radius:22px;text-align:center;
+ border:3px solid transparent;background:linear-gradient(rgba(25,10,50,.42),rgba(25,10,50,.42)) padding-box,conic-gradient(from var(--a),#ffd24a,#35e0ff,#b061ff,#ffd24a) border-box;
+ -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);box-shadow:0 0 40px rgba(176,97,255,.35);opacity:0;pointer-events:none;transition:opacity 2s,transform 2s;animation:spin 6s linear infinite;overflow:hidden}
+body.show #card{opacity:1;transform:translate(-50%,-50%) scale(1)}
+@keyframes spin{to{--a:360deg}}
+#card h1{margin:0 0 8px;font-size:clamp(34px,9vw,52px);background:linear-gradient(90deg,#ffd24a,#ff7ab8,#7be0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+#lines div{font-size:clamp(15px,4.2vw,20px);line-height:1.5;opacity:0;transform:translateY(10px);filter:blur(4px);transition:all 1.6s;text-shadow:0 0 12px rgba(255,180,230,.6)}
+#lines div.on{opacity:1;transform:none;filter:none}
+#lines div:last-child{font-style:italic;font-size:clamp(17px,5vw,24px);color:#ffe3f1;margin-top:6px}
+#strip{margin-top:14px;overflow:hidden;border-radius:12px}
+.trk{display:flex;gap:10px;width:max-content;animation:h 28s linear infinite}
+@keyframes h{to{transform:translateX(-50%)}}
+/* Mọi ảnh bị ÉP về ô vuông cố định, phần dài/thừa tự cắt (object-fit:cover) */
+.tile{flex:none;width:76px;height:76px;aspect-ratio:1/1;overflow:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 0 12px rgba(255,255,255,.25)}
+.tile img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;pointer-events:none}
+.side{position:fixed;top:0;height:100%;width:110px;overflow:hidden;opacity:0;transition:opacity 3s}
+.side.L{left:2vw}.side.R{right:2vw}
+body.show .side{opacity:.85}
+.col{display:flex;flex-direction:column;gap:12px;animation:v 45s linear infinite}
+.side.R .col{animation-direction:reverse}
+.col .tile{width:110px;height:110px}
+@keyframes v{to{transform:translateY(-50%)}}
+@media(max-width:900px){.side{display:none}}
+#re{position:fixed;right:12px;bottom:12px;z-index:5;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:50%;width:38px;height:38px;font-size:18px;cursor:pointer}
+@media(prefers-reduced-motion:reduce){.trk,.col{animation-duration:120s}}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<canvas id="c" role="img" aria-label="Hoạt cảnh 3D chào mừng ngày 20/10: pháo hoa, hoa sen, trái tim và đôi bàn tay"></canvas>
+<div id="err">Trình duyệt không hỗ trợ WebGL. 🌸<br><br>Chúc mừng ngày 20/10! Chúc những người phụ nữ luôn rạng rỡ và hạnh phúc.</div>
+<div class="side L"><div class="col"></div></div>
+<div class="side R"><div class="col"></div></div>
+<div id="card"><h1>20/10</h1><div id="lines"></div><div id="strip"><div class="trk"></div></div></div>
+<button id="re" title="Xem lại">↻</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ================== CẤU HÌNH – CHỈNH Ở ĐÂY ================== */
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  DANH SÁCH LINK ẢNH CHO "THẺ" (carousel + 2 cột hai bên)     ║
+   ║  → Thay các link bên dưới bằng link ảnh của bạn.             ║
+   ║  → Mỗi dòng 1 link, nằm trong dấu nháy, cách nhau dấu phẩy.  ║
+   ║  → Thêm bao nhiêu ảnh cũng được. Link lỗi sẽ tự hiện ô màu.  ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+const IMAGES = [
+  'https://picsum.photos/id/1011/400/400',
+  'https://picsum.photos/id/1012/400/400',
+  'https://picsum.photos/id/1015/400/400',
+  'https://picsum.photos/id/1018/400/400',
+  'https://picsum.photos/id/1025/400/400',
+  'https://picsum.photos/id/1035/400/400',
+  'https://picsum.photos/id/1041/400/400',
+  'https://picsum.photos/id/1043/400/400',
+  // 'https://link-anh-cua-ban.com/anh1.jpg',
+];
+// Các dòng chúc lần lượt hiện trên thiệp (mỗi dòng cách 4 giây từ giây 30)
+const LINES = [
+  "Huy đẹp trai lớp 11i2 ko chơi fifai",
+  "Huy đẹp trai lớp 11i2 ko chơi fifai",
+  "Huy đẹp trai lớp 11i2 ko chơi fifai",
+  "Huy đẹp trai lớp 11i2 ko chơi fifai",
+  "Huy đẹp trai lớp 11i2 ko chơi fifai",
+  "Huy đẹp trai lớp 11i2 ko chơi fifai",
+  "Huy đẹp trai lớp 11i2 ko chơi fifai"
+];
+const EMOJI = ['🌸','💐','🌷','💖','🪷','🌹','✨','🎀'];
+/* ============================================================ */
+
+(()=>{
+if(typeof THREE==='undefined'){const e=document.getElementById('err');e.style.display='block';
+  e.innerHTML='Không tải được thư viện 3D (Three.js). 🌸<br><br>Hãy kiểm tra mạng, hoặc mở file bằng <b>Chrome / Safari</b> (không mở trong Zalo, Messenger hay trình xem file).';return}
+const TAU=Math.PI*2,R=Math.random;
+const mobile=Math.min(innerWidth,innerHeight)<600;
+const N=mobile?9000:18000,S=6000;
+const $=id=>document.getElementById(id);
+
+/* ---------- UI: lines + tiles ---------- */
+const linesEl=$('lines');LINES.forEach(t=>{const d=document.createElement('div');d.textContent=t;linesEl.appendChild(d)});
+function tiles(parent,count){
+  const src=IMAGES.length?IMAGES:EMOJI,out=[];
+  for(let k=0;k<2;k++)for(let i=0;i<Math.max(count,src.length);i++){
+    const s=src[(i+(parent.dataset.o|0))%src.length],d=document.createElement('div');d.className='tile';
+    if(IMAGES.length){const im=new Image();im.alt='';im.referrerPolicy='no-referrer';im.draggable=false;
+      im.onerror=()=>{im.remove();d.textContent=EMOJI[i%8];d.style.background='linear-gradient(135deg,#ff7ab8,#7b5cff)'};
+      im.src=s;d.appendChild(im)}
+    else{d.textContent=s;d.style.background=`linear-gradient(135deg,hsl(${(i*47)%360} 80% 60%/.55),hsl(${(i*47+80)%360} 80% 45%/.55))`}
+    parent.appendChild(d)}
+}
+tiles(document.querySelector('.trk'),8);
+document.querySelectorAll('.col').forEach((c,i)=>{c.dataset.o=i*3;tiles(c,8)});
+
+/* ---------- Renderer ---------- */
+let renderer;
+try{renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:!mobile,alpha:true,powerPreference:'high-performance'})}
+catch(e){$('err').style.display='block';return}
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(55,1,.1,300);
+let zB=9.5;
+
+const sc=document.createElement('canvas');sc.width=sc.height=64;
+{const g=sc.getContext('2d'),gr=g.createRadialGradient(32,32,0,32,32,32);
+ gr.addColorStop(0,'#fff');gr.addColorStop(.25,'rgba(255,255,255,.8)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,64,64)}
+const tex=new THREE.CanvasTexture(sc);
+function mkPts(pos,col,size){
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const p=new THREE.Points(geo,new THREE.PointsMaterial({size,map:tex,vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+  p.frustumCulled=false;scene.add(p);return p}
+
+/* Sao nền */
+const stP=new Float32Array(1400*3),stC=new Float32Array(1400*3);
+for(let i=0;i<1400;i++){const u=R()*2-1,a=R()*TAU,s=Math.sqrt(1-u*u),r=60+R()*60,b=.25+R()*.6;
+ stP.set([s*Math.cos(a)*r,u*r,s*Math.sin(a)*r],i*3);stC.set([b*.8,b*.8,b],i*3)}
+const stars=mkPts(stP,stC,.45);
+
+/* Hạt chính (hình khối) */
+const P=new Float32Array(N*3),C=new Float32Array(N*3),TP=new Float32Array(N*3),TC=new Float32Array(N*3),V=new Float32Array(N*3),RT=new Float32Array(N),SD=new Float32Array(N);
+for(let i=0;i<N;i++)P[i*3+1]=-100;
+const pts=mkPts(P,C,.13);
+
+/* Tia lửa / pháo */
+const SP=new Float32Array(S*3),SV=new Float32Array(S*3),SL=new Float32Array(S),SM=new Float32Array(S).fill(1),SC=new Float32Array(S*3),SR=new Float32Array(S*3);
+for(let i=0;i<S;i++)SP[i*3+1]=-100;
+const sparks=mkPts(SP,SR,.11);let si=0;
+function emit(x,y,z,vx,vy,vz,l,r,g,b){const i=si++%S,j=i*3;SP[j]=x;SP[j+1]=y;SP[j+2]=z;SV[j]=vx;SV[j+1]=vy;SV[j+2]=vz;SL[i]=SM[i]=l;SC[j]=r;SC[j+1]=g;SC[j+2]=b}
+const tc=new THREE.Color();
+function burst(x,y,z,n,sp,hue){for(let k=0;k<n;k++){const u=R()*2-1,a=R()*TAU,s=Math.sqrt(1-u*u),v=sp*(.35+R()*.65);
+ tc.setHSL((hue+R()*.12)%1,1,.62);emit(x,y,z,s*Math.cos(a)*v,u*v,s*Math.sin(a)*v,1.2+R()*1.3,tc.r,tc.g,tc.b)}}
+
+/* ---------- Tạo hình mục tiêu ---------- */
+const SPI=(i,x,y,z,r,g,b,side)=>{const j=i*3;TP[j]=x;TP[j+1]=y;TP[j+2]=z;TC[j]=r;TC[j+1]=g;TC[j+2]=b;SD[i]=side||0};
+let mode='hidden',off=0;
+function plan(gen,r0,r1){for(let i=0;i<N;i++){gen(i);RT[i]=r0+R()*(r1-r0)}mode='morph'}
+
+// Hoa sen
+function lotus(i){
+  if(R()<.1){const r=R()*.5,a=R()*TAU;return SPI(i,Math.cos(a)*r,-.6+R()*.6,Math.sin(a)*r,1,.85,.3)}
+  const l=Math.min(3,Math.floor(Math.pow(R(),.8)*4)),pc=[6,8,10,12][l],ang=Math.floor(R()*pc)/pc*TAU+l*.35;
+  const L=[1.5,2,2.5,3][l],W=[.55,.7,.85,.95][l],tilt=[1.25,.95,.6,.28][l],u=R(),v=R()*2-1;
+  const wid=Math.sin(Math.PI*Math.pow(u,.7)),d=u*L,lat=v*wid*W;
+  const px=d*Math.cos(tilt),py=d*Math.sin(tilt)+lat*lat*.45-.9,pz=lat;
+  const X=px*Math.cos(ang)+pz*Math.sin(ang),Z=-px*Math.sin(ang)+pz*Math.cos(ang),k=.8+.2*u;
+  SPI(i,X,py,Z,1*k,.45+.4*u,.62+.3*u)}
+// Trái tim
+function heartPt(sc){const t=R()*TAU,s=Math.pow(R(),.4),x=16*Math.pow(Math.sin(t),3),y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+ return[x*s*.19*sc,(y+2.5)*s*.19*sc,(R()-.5)*2*1.3*sc*Math.sqrt(1-s*s)]}
+function heart(i,sc,dy){const p=heartPt(sc);SPI(i,p[0],p[1]+dy,p[2],1,.1+R()*.15,.2+R()*.2)}
+// Chữ 20/10
+const TXT=[];
+{const cv=document.createElement('canvas');cv.width=520;cv.height=200;const g=cv.getContext('2d');
+ g.fillStyle='#fff';g.font='900 190px Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('20/10',260,105);
+ const d=g.getImageData(0,0,520,200).data;
+ for(let y=0;y<200;y+=3)for(let x=0;x<520;x+=3)if(d[(y*520+x)*4+3]>128)TXT.push([(x-260)*.017,(105-y)*.017-1.8,x/520])}
+function text(i){const p=TXT[(R()*TXT.length)|0],m=p[2];SPI(i,p[0]+(R()-.5)*.04,p[1],(R()-.5)*.5,1,.85-.4*m,.4+.35*m)}
+// Bàn tay (point-cloud mô phỏng bàn tay có xương)
+function hand(n){
+  const segs=[],th=-.5,out=[];
+  const add=(a,b,r)=>segs.push({a,b,r,w:Math.hypot(b[0]-a[0],b[1]-a[1])*r+.02});
+  [[.36,1],[.12,1.12],[-.12,1.02],[-.36,.78]].forEach(([x,L])=>{
+    const a0=-x*.3,p0=[x,.45],p1=[p0[0]+L*.55*Math.sin(a0),p0[1]+L*.55*Math.cos(a0)],
+      p2=[p1[0]+L*.45*Math.sin(a0+.5),p1[1]+L*.45*Math.cos(a0+.5)];add(p0,p1,.11);add(p1,p2,.1)});
+  const t0=[.5,-.15],t1=[t0[0]+.41,t0[1]-.37],t2=[t1[0]+.4,t1[1]-.05];add(t0,t1,.14);add(t1,t2,.12);
+  const tot=segs.reduce((s,q)=>s+q.w,0);
+  const rd=()=>{let a=R()-.5,b=R()-.5,c=R()-.5;const m=Math.hypot(a,b,c)||1;return[a/m,b/m,c/m]};
+  for(let i=0;i<n;i++){let x,y,z;const d=rd();
+    if(R()<.38){const k=.6+.4*R();x=d[0]*.5*k;y=d[1]*.55*k;z=d[2]*.2*k}
+    else{let r=R()*tot,q=segs[0];for(const s of segs){if((r-=s.w)<=0){q=s;break}}
+      const t=R(),k=q.r*(.4+.6*R());x=q.a[0]+(q.b[0]-q.a[0])*t+d[0]*k;y=q.a[1]+(q.b[1]-q.a[1])*t+d[1]*k;z=d[2]*k}
+    const X=x*Math.cos(th)-y*Math.sin(th),Y=x*Math.sin(th)+y*Math.cos(th);
+    out.push([X*1.8-1.5,Y*1.8-.3,z*1.8])}
+  return out}
+const HL=hand(Math.ceil(N/2));
+function hands(i){const p=HL[i>>1],left=i%2===0;SPI(i,left?p[0]:-p[0],p[1],p[2],1,.72+R()*.15,.7+R()*.15,left?-1:1)}
+
+/* Nổ tung */
+function explode(a,b,warm){mode='explode';
+  for(let i=0;i<N;i++){const j=i*3,u=R()*2-1,an=R()*TAU,s=Math.sqrt(1-u*u),v=a+R()*(b-a);
+    V[j]=s*Math.cos(an)*v;V[j+1]=u*v;V[j+2]=s*Math.sin(an)*v;
+    if(warm)TC.set([1,.85,.55],j);else{tc.setHSL(R(),1,.65);TC.set([tc.r,tc.g,tc.b],j)}}}
+function startLotus(){
+  for(let i=0;i<N;i++){const j=i*3;P[j]=(R()-.5)*.25;P[j+1]=.3+(R()-.5)*.25;P[j+2]=(R()-.5)*.25;C[j]=C[j+1]=C[j+2]=.9}
+  plan(lotus,.5,1.1)}
+
+/* ---------- Pháo hoa ---------- */
+const RK=[];
+[.1,.7,1.3,1.9,2.5,3.1].forEach((t,i)=>RK.push({t,d:2.2,x0:(R()-.5)*8,x1:(R()-.5)*8,y1:.5+R()*3,h:R(),n:240}));
+RK.push({t:2.8,d:3.2,x0:0,x1:0,y1:.3,h:.9,big:1});
+RK.push({t:14.6,d:.8,x0:-3.5,x1:-3,y1:-.8,h:.12,n:120},{t:14.6,d:.8,x0:3.5,x1:3,y1:-.8,h:.5,n:120});
+
+/* ---------- Mốc thời gian ---------- */
+let rotY=0,spinning=false;
+const EV=[
+ {t:11,f:()=>explode(2,6,true)},
+ {t:13,f:()=>{spinning=true;plan(i=>heart(i,1,0),1.5,3)}},
+ {t:15.3,f:()=>{rotY=((rotY+Math.PI)%TAU+TAU)%TAU-Math.PI;spinning=false;plan(i=>i<N*.45?heart(i,.5,2.5):text(i),1.5,3)}},
+ {t:21,f:()=>{explode(3,7,false);burst(0,0,0,300,5,R())}},
+ {t:21.9,f:()=>plan(hands,.8,1.8)},
+ {t:28,f:()=>document.body.classList.add('show')}
+];
+const FW=[];
+
+/* ---------- Vòng lặp ---------- */
+let t0=performance.now(),last=t0,T=0,nextFW=28,rotOn=false;
+function reset(now){t0=now;T=0;mode='hidden';off=0;rotY=0;nextFW=28;
+  for(let i=0;i<N;i++){P[i*3+1]=-100;C[i*3]=C[i*3+1]=C[i*3+2]=0}
+  SL.fill(0);RK.forEach(r=>r.done=0);EV.forEach(e=>e.done=0);
+  document.body.classList.remove('show');[...linesEl.children].forEach(d=>d.classList.remove('on'));
+  pts.material.opacity=1;pts.scale.setScalar(1)}
+$('re').onclick=()=>reset(performance.now());
+
+const ease=p=>p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+function frame(now){
+  requestAnimationFrame(frame);
+  const raw=(now-last)/1000;last=now;
+  if(raw>.25)t0+=(raw-.05)*1000;           // tab ẩn: giữ mạch thời gian
+  const dt=Math.min(raw,.05);T=(now-t0)/1000;
+  if(T>=120){reset(now);return}
+
+  EV.forEach(e=>{if(!e.done&&T>=e.t){e.done=1;e.f()}});
+  RK.forEach(r=>{
+    if(T<r.t)return;const p=(T-r.t)/r.d;
+    if(p<1){const e=1-(1-p)*(1-p),x=r.x0+(r.x1-r.x0)*e,y=-5+(r.y1+5)*e;
+      for(let k=0;k<(r.big?5:3);k++)emit(x+(R()-.5)*.06,y,0,(R()-.5)*.3,-.6-R(),(R()-.5)*.2,.5+R()*.5,1,.75,.4);
+      emit(x,y,0,0,0,0,.06,1,1,1)}
+    else if(!r.done){r.done=1;if(r.big)startLotus();else burst(r.x1,r.y1,0,r.n,3.2,r.h)}});
+
+  // thiệp & lời chúc
+  if(T>=28&&T>=nextFW){nextFW=T+1.8+R()*1.2;burst((R()-.5)*10,1+R()*3.5,-2,140,2.6,R())}
+  [...linesEl.children].forEach((d,i)=>{if(T>=30+i*4)d.classList.add('on')});
+
+  // bàn tay áp sát nhau
+  off=T>=21.9?5.5*(1-ease(Math.min(1,(T-21.9)/4.2))):0;
+
+  // cập nhật hạt hình khối
+  if(mode!=='hidden'){
+    const dk=Math.min(1,dt*3),ex=Math.exp(-dt*1.4);
+    for(let i=0,j=0;i<N;i++,j+=3){
+      if(mode==='morph'){const k=Math.min(1,RT[i]*dt);
+        P[j]+=(TP[j]+SD[i]*off-P[j])*k;P[j+1]+=(TP[j+1]-P[j+1])*k+Math.sin(T*1.5+i*.37)*.0015;P[j+2]+=(TP[j+2]-P[j+2])*k}
+      else{P[j]+=V[j]*dt;P[j+1]+=V[j+1]*dt;P[j+2]+=V[j+2]*dt;V[j]*=ex;V[j+1]*=ex;V[j+2]*=ex}
+      C[j]+=(TC[j]-C[j])*dk;C[j+1]+=(TC[j+1]-C[j+1])*dk;C[j+2]+=(TC[j+2]-C[j+2])*dk}
+    pts.geometry.attributes.position.needsUpdate=true;pts.geometry.attributes.color.needsUpdate=true}
+
+  // cập nhật tia lửa
+  for(let i=0,j=0;i<S;i++,j+=3){
+    if(SL[i]<=0){SR[j]=SR[j+1]=SR[j+2]=0;continue}
+    SL[i]-=dt;const a=Math.max(0,SL[i]/SM[i]);
+    SP[j]+=SV[j]*dt;SP[j+1]+=SV[j+1]*dt;SP[j+2]+=SV[j+2]*dt;SV[j+1]-=2.2*dt;SV[j]*=.985;SV[j+2]*=.985;
+    SR[j]=SC[j]*a;SR[j+1]=SC[j+1]*a;SR[j+2]=SC[j+2]*a}
+  sparks.geometry.attributes.position.needsUpdate=true;sparks.geometry.attributes.color.needsUpdate=true;
+
+  // xoay + nhịp tim
+  if(spinning||(T>6&&T<15.3&&mode!=='hidden'))rotY+=dt*.5;else rotY*=Math.exp(-dt*3);
+  pts.rotation.y=rotY;
+  const hb=(T>13&&T<15.3)||T>26;
+  pts.scale.setScalar(hb?1+.045*Math.pow(Math.max(0,Math.sin(T*5.5)),4):1);
+  if(T>28)pts.material.opacity+=(.6-pts.material.opacity)*dt;
+  stars.rotation.y+=dt*.01;
+
+  // camera
+  let zt=zB,yt=T<15?1.6+Math.sin(T*.3)*.3:.4;
+  if(T>15.3&&T<21)zt=zB*.88;else if(T>=21.9&&T<28)zt=zB*.95;else if(T>=28)zt=zB*1.12;
+  cam.position.z+=(zt-cam.position.z)*Math.min(1,dt*1.2);
+  cam.position.y+=(yt-cam.position.y)*Math.min(1,dt*1.5);
+  cam.position.x=Math.sin(T*.25)*.8;cam.lookAt(0,.2,0);
+  renderer.render(scene,cam)}
+
+function resize(){
+  const w=innerWidth,h=innerHeight;renderer.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix();
+  zB=9.5*Math.max(1,1.2/cam.aspect);pts.material.size=.13*zB/9.5;sparks.material.size=.11*zB/9.5;
+  if(T<15.3)cam.position.z=zB}
+addEventListener('resize',resize);resize();cam.position.set(0,1.6,zB);
+requestAnimationFrame(n=>{t0=last=n;frame(n)});
+})();
+</script>
+</body>
+</html>
